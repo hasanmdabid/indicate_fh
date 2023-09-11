@@ -168,3 +168,5 @@ cython_debug/
 *.csv
 .vscode/
 *.h5 
+data/
+data2/
