@@ -22,7 +22,7 @@ def my_model(filter_size, INPUT_SHAPE, dropout_rt):
     model.add(Dense(1, activation = 'sigmoid'))
     model.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
     
-    return my_model
+    return model
 
 def VGG3(filter_size, INPUT_SHAPE, dropout_rt):
     model = Sequential()

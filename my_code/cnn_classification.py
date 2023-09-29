@@ -19,6 +19,9 @@ from skimage import img_as_ubyte, img_as_float
 from skimage.exposure import equalize_adapthist
 import tensorflow as tf
 import platform
+import logging
+logging.getLogger('tensorflow').disabled = True
+
 
 #Iterate through all images in Parasitized folder, resize to 64 x 64
 #Then save as numpy array with name 'dataset'
@@ -38,7 +41,7 @@ def check_gpu():
 check_gpu()
 
 image_directory = "/home/abidhasan/Documents/Indicate_FH/data/"
-SIZE = 512
+SIZE = 256
 dataset = []  #Many ways to handle data, you can use pandas. Here, we are using a list format.  
 label = []  #Place holders to define add labels. We will add 0 to all parasitized images and 1 to uninfected.
 
@@ -54,14 +57,13 @@ for i, image_name in enumerate(not_effected):    #Remember enumerate method adds
                 continue
         # converting BGR to RGB
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = equalize_adapthist(image, kernel_size=None, clip_limit=0.1, nbins=256) # Applying the CLAHE to increase the contrast of the image
+        #image = equalize_adapthist(image, kernel_size=None, clip_limit=0.1, nbins=256) # Applying the CLAHE to increase the contrast of the image
         image = img_as_ubyte(resize(image, (SIZE, SIZE), anti_aliasing=True)) 
         # Resizing the Image into 256 * 256 
         # Converting an image to unsigned byte format, with values in [0, 255].
         dataset.append(np.array(image))
         label.append(0)
-dataset = np.array(dataset)
-print(dataset.shape)
+
         
 #Iterate through all images in Uninfected folder, resize to 64 x 64
 #Then save into the same numpy array 'dataset' but with label 1
@@ -74,7 +76,7 @@ for i, image_name in enumerate(effected):
                 continue
         # converting BGR to RGB
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = equalize_adapthist(image, kernel_size=None, clip_limit=0.1, nbins=256) # Applying the CLAHE to increase the contrast of the image
+        #image = equalize_adapthist(image, kernel_size=None, clip_limit=0.1, nbins=256) # Applying the CLAHE to increase the contrast of the image
         image = img_as_ubyte(resize(image, (SIZE, SIZE), anti_aliasing=True))
         # Resizing the Image into 256 * 256 
         # Converting an image to unsigned byte format, with values in [0, 255].
@@ -83,11 +85,12 @@ for i, image_name in enumerate(effected):
 
 
 dataset = np.array(dataset)
+print('Shape of dataset', dataset.shape)
 label = np.array(label)
-print(dataset.shape)
-print(label.shape)
 
-print(np.unique(label, return_counts=True))
+print('Shape of the labels', label.shape)
+
+print('Count of the labels', np.unique(label, return_counts=True))
 
     
 ###############################################################    

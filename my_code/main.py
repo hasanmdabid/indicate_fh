@@ -19,7 +19,8 @@ from keras.regularizers import l2
 from split_data import *
 import logging
 logging.getLogger('tensorflow').disabled = True
-
+from Image_generator import *
+from clear_folder import clear_folder
 """
 **Defien the network parameters which should be later in save results functions.** 
 """
@@ -37,12 +38,85 @@ datapath = '/home/abidhasan/Documents/Indicate_FH/data'
 train_data_ratio=0.6
 val_data_ratio = 0.2
 test_data_ratio = 0.2
+percentage_to_read = 30
+effected_aug_data_folder = '/home/abidhasan/Documents/Indicate_FH/aug_image/effected'
+not_effected_aug_data_folder = '/home/abidhasan/Documents/Indicate_FH/aug_image/not_effected'
+# Specify the folder path you want to read the images from
+effected_image_directory = '/home/abidhasan/Documents/Indicate_FH/data/effected'
+not_effected_image_directory = '/home/abidhasan/Documents/Indicate_FH/data/not_effected'
+#************************************************************************************************
+val = input('Do you want to augmented the data? yes or no: ')
+if val.lower() == 'yes':
+    image_generator(SIZE, batch_size, percentage_to_read,  effected_aug_data_folder, not_effected_aug_data_folder, effected_image_directory, not_effected_image_directory)
+elif val.lower() == 'no':
+    print('You did nt use the Augmentation data')
+else:
+    print('you did not choose yes or no')
+    
+#**********************************************************************************************
+# This code will copy all the Augmented images into the train dataset. 
+
+import shutil
+
+def copy_images(source_directory, destination_directory):
+    # Check if the source directory exists
+    if not os.path.exists(source_directory):
+        print(f"Source directory '{source_directory}' does not exist.")
+        return
+    
+    # Check if the destination directory exists, create it if not
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+    
+    # Loop through files in the source directory
+    for filename in os.listdir(source_directory):
+        source_file = os.path.join(source_directory, filename)
+        
+        if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Add more image formats as needed
+            destination_file = os.path.join(destination_directory, filename)
+            shutil.copy(source_file, destination_file)
+            print(f"Copied '{filename}' to '{destination_directory}'")
+
+# Source and destination directory paths
 #***********__________Split the Dataset into Train, Validation and test folders________ ********
-"""
+
 split = input("Split the dataset into train, test and validation:")
-if split == "yes" or "YES":
+if split.lower() == 'yes':
+    clear_folder('/home/abidhasan/Documents/Indicate_FH/train_val_test')
     split_data(datapath, train_data_ratio, val_data_ratio, test_data_ratio)
-"""
+    copy_images(effected_aug_data_folder, '/home/abidhasan/Documents/Indicate_FH/train_val_test/train/effected')
+    copy_images(not_effected_aug_data_folder, '/home/abidhasan/Documents/Indicate_FH/train_val_test/train/not_effected')
+elif split.lower() == 'no':
+    print('You did not split the dataset')
+else:
+    print('You did not choose yes or no')
+
+#**********************************************************************************************
+# This code will copy all the Augmented images into the train dataset. 
+
+import shutil
+
+def copy_images(source_directory, destination_directory):
+    # Check if the source directory exists
+    if not os.path.exists(source_directory):
+        print(f"Source directory '{source_directory}' does not exist.")
+        return
+    
+    # Check if the destination directory exists, create it if not
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+    
+    # Loop through files in the source directory
+    for filename in os.listdir(source_directory):
+        source_file = os.path.join(source_directory, filename)
+        
+        if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Add more image formats as needed
+            destination_file = os.path.join(destination_directory, filename)
+            shutil.copy(source_file, destination_file)
+            print(f"Copied '{filename}' to '{destination_directory}'")
+
+# Source and destination directory paths
+
 #**********************************************************************************************
 
 
@@ -56,15 +130,14 @@ datagen = ImageDataGenerator(rescale=1./255)
 
 # load and iterate training dataset
 #If I want to resize the Image then put the following param to flow_from_directory
-# target_size = (128,128)
-train_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/data2/train/', seed=seed, class_mode='binary', batch_size=batch_size)
+target_size = (SIZE, SIZE)
+train_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/train/', seed=seed, class_mode='binary', target_size=target_size, batch_size=batch_size)
 # load and iterate validation dataset
-val_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/data2/val/', class_mode='binary', batch_size=batch_size)
+val_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/val/', class_mode='binary', target_size=target_size, batch_size=batch_size)
 # load and iterate test dataset
-test_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/data2/test/', class_mode='binary', batch_size=batch_size)
+test_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/test/', class_mode='binary', target_size=target_size, batch_size=batch_size)
 # load and iterate test dataset for the prediction perpose when the batch_size==1, as we want to predict each image.
-predict_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/data2/test/', class_mode='binary', batch_size=1)
-
+predict_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/test/', class_mode='binary', target_size=target_size, batch_size=1)
 
 # confirm the iterator works
 train_X, train_y = train_it.next()
