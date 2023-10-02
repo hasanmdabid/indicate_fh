@@ -29,7 +29,7 @@ seed =42
 SIZE = 256
 batch_size = 32
 verbose = 1
-epochs = 100
+epochs = 10
 modelname = "2DCNN"
 filter_size = 64
 dropout_rt = 0.4
@@ -115,7 +115,6 @@ def copy_images(source_directory, destination_directory):
             shutil.copy(source_file, destination_file)
             print(f"Copied '{filename}' to '{destination_directory}'")
 
-# Source and destination directory paths
 
 #**********************************************************************************************
 
@@ -191,12 +190,12 @@ print("Predict steps per Epoch:", predict_steps_per_epoch)
 
 
 #ModelCheckpoint callback saves a model at some interval. 
-filepath="saved_model/weights-improvement-{epoch:02d}-{val_loss:.2f}.hdf5" #File name includes epoch and validation accuracy.
+checckpoint_filepath="checkpoints/weights-improvement-{epoch:02d}-{val_loss:.2f}.hdf5" #File name includes epoch and validation accuracy.
 #Use Mode = max for accuracy and min for loss. 
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
-mc = ModelCheckpoint(filepath, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
+mc = ModelCheckpoint(checckpoint_filepath, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
 #CSVLogger logs epoch, acc, loss, val_acc, val_loss
-log_csv = CSVLogger('saved_model/my_logs.csv', separator=',', append=False)
+log_csv = CSVLogger('my_logs.csv', separator=',', append=False)
 callbacks_list = [mc, es, log_csv]
  
 
@@ -209,11 +208,11 @@ callbacks_list = [mc, es, log_csv]
 #************************************************************************************************
 # Generating the model from Models script   
 model = my_model(filter_size, INPUT_SHAPE, dropout_rt)
-#model.summary()
+model.summary()
 history =  model.fit(train_it, steps_per_epoch=train_steps_per_epoch, validation_data=val_it, validation_steps=val_steps_per_epoch, epochs=epochs, verbose = verbose, callbacks = callbacks_list)
 scores= model.evaluate(test_it, steps=test_steps_per_epoch)
 print(f'Score for test Image: {model.metrics_names[0]} = {scores[0]}; {model.metrics_names[1]} = {scores[1] * 100}%')
-model.save('2DCNN_BASE_MODEL.h5')
+model.save('saved_model/2DCNN_BASE_MODEL.h5')
 
 
 #*************************************************************************************************
@@ -223,7 +222,7 @@ f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 t = f.suptitle('CNN Performance', fontsize=12)
 f.subplots_adjust(top=0.85, wspace=0.3)
 max_epoch = len(history.history['accuracy'])+1
-epoch_list = list(range(1,max_epoch))
+epoch_list = list(range(1, max_epoch))
 ax1.plot(epoch_list, history.history['accuracy'], label='Train Accuracy')
 ax1.plot(epoch_list, history.history['val_accuracy'], label='Validation Accuracy')
 ax1.set_xticks(np.arange(1, max_epoch, 5))
@@ -240,11 +239,11 @@ ax2.set_xlabel('Epoch')
 ax2.set_title('Loss')
 l2 = ax2.legend(loc="best")
 plt.show()
-#plt.savefig('filtered_image/CNN_TRAIN_VS_VALIDATION_LOSS.png', bbox_inches='tight')
+plt.savefig('performance_figures/CNN_TRAIN_VS_VALIDATION_LOSS.png', bbox_inches='tight')
 
 #Load the saved model
 from keras.models import load_model
-model = load_model('2DCNN_BASE_MODEL.h5')
+model = load_model('saved_model/2DCNN_BASE_MODEL.h5')
 
 #************************************************************************************************
 #Plotting the ROC and AUC from the evaluated model
@@ -260,7 +259,7 @@ plt.plot(fpr, tpr, marker='.')
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
 plt.title('ROC curve')
-#plt.savefig('filtered_image/ROC_CURVE.png', bbox_inches='tight')
+plt.savefig('performance_figures/ROC_CURVE.png', bbox_inches='tight')
 plt.show()
 
 
