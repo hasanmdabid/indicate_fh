@@ -11,17 +11,17 @@ from PIL import Image
 from skimage.transform import resize  
 from keras.layers import MaxPooling2D, Conv2D, BatchNormalization, Dense, Dropout, Flatten, Input
 from keras.models import Model, Sequential
-from keras.callbacks import TensorBoard
-from sklearn.preprocessing import MinMaxScaler
 from keras.utils import normalize
-from sklearn.model_selection import train_test_split, KFold
-from skimage import img_as_ubyte, img_as_float
+from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
+from skimage import img_as_ubyte
 from skimage.exposure import equalize_adapthist
 import tensorflow as tf
 import platform
 import logging
 logging.getLogger('tensorflow').disabled = True
-
+from keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import f1_score
+from models import *
 
 #Iterate through all images in Parasitized folder, resize to 64 x 64
 #Then save as numpy array with name 'dataset'
@@ -41,6 +41,7 @@ def check_gpu():
 check_gpu()
 
 image_directory = "/home/abidhasan/Documents/Indicate_FH/data/"
+modelpath = '/home/abidhasan/Documents/Indicate_FH/saved_model'
 SIZE = 256
 dataset = []  #Many ways to handle data, you can use pandas. Here, we are using a list format.  
 label = []  #Place holders to define add labels. We will add 0 to all parasitized images and 1 to uninfected.
@@ -90,7 +91,7 @@ label = np.array(label)
 
 print('Shape of the labels', label.shape)
 
-print('Count of the labels', np.unique(label, return_counts=True))
+print('Count of the labels in dataset', np.unique(label, return_counts=True))
 
     
 ###############################################################    
@@ -109,13 +110,15 @@ X_train, X_test, y_train, y_test = train_test_split(dataset, label, test_size = 
 
 X_train = normalize(X_train, axis=1)
 X_test = normalize(X_test, axis=1)
-
-print(X_train.shape)
-print(X_test.shape)
-print(y_train.shape)
-print(y_test.shape)
+print('Maximume and minimume value in testset =', np.max(X_test), np.min(X_test))
 
 
+print(f"Shape of training set: {X_train.shape}")
+print(f'Shape of testing set: {X_test.shape}')
+print(f'Shape of train label:{y_train.shape}')
+print('Count of the train dataset labels', np.unique(y_train, return_counts=True))
+print(f'Shape of test label:{y_test.shape}')
+print('Count of the test dataset labels', np.unique(y_test, return_counts=True))
 
 #Apply CNN
 # ### Build the model
@@ -128,63 +131,55 @@ INPUT_SHAPE = (SIZE, SIZE, 3)   #change to (SIZE, SIZE, 3)
 ##############################################################################################################
 # Calling the K fold
 # Define the K-fold Cross Validator
-kfold = KFold(n_splits=2, shuffle=True)
-
+num_folds = 5
+fold_method = input('Do you want to use k-fold of stratified k_fold cross validation? (kf/skf)')
+if fold_method.lower() == 'kf':
+    kfold = KFold(n_splits=num_folds, shuffle=True)
+elif fold_method.lower() == 'skf':
+    kfold = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=42)
+else:
+    print('You did not specify the K-fold cross validation method correctly. Please select the correct method.')
 ###############################################################################################################
 
 # Define per-fold score containers
 acc_per_fold = []
 loss_per_fold = []
-
+f1_score_per_fold = []
+best_model = None
+best_macro_f1 = 0.0
+average_f1_scores = []
 # K-fold Cross Validation model evaluation
- 
+INPUT_SHAPE = (SIZE, SIZE, 3)
+dropout_rt = 0.4
 fold_no = 1
+batch_size = 32
 
 for train, test in kfold.split(dataset, label):
     # Define the model architectur
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), input_shape = (SIZE, SIZE, 3), activation = 'relu', data_format='channels_last'))
-    model.add(MaxPooling2D(pool_size = (2, 2), data_format="channels_last"))
-    model.add(BatchNormalization(axis = -1))
-    model.add(Dropout(0.2))
-    model.add(Conv2D(32, (3, 3), activation = 'relu'))
-    model.add(MaxPooling2D(pool_size = (2, 2), data_format="channels_last"))
-    model.add(BatchNormalization(axis = -1))
-    model.add(Dropout(0.2))
-    model.add(Flatten())
-    model.add(Dense(512, activation = 'relu'))
-    model.add(BatchNormalization(axis = -1))
-    model.add(Dropout(0.2)) 
-    model.add(Dense(256, activation = 'relu'))
-    model.add(BatchNormalization(axis = -1))
-    model.add(Dropout(0.2))
-    model.add(Dense(1, activation = 'sigmoid'))
-    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
-
+    model = VGG3(INPUT_SHAPE, dropout_rt)
     # fit network
-
     # Generate a print
     print('------------------------------------------------------------------------')
     print(f'Training for fold {fold_no} ...')
 
     # Fit data to model
-    history = model.fit(X_train, 
-                         y_train, 
-                         batch_size = 64, 
-                         verbose = 1, 
-                         epochs = 50,      #Changed to 3 from 50 for testing purposes.
-                         validation_data=(X_test, y_test),
-                         validation_split = 0.1,
-                         shuffle = False
-                      #   callbacks=callbacks
-                     )
+    #history = model.fit(datagen.flow(X_train, y_train, batch_size= batch_size), steps_per_epoch=len(X_train) // batch_size, verbose = 1,  epochs=100, validation_data=(X_test, y_test), shuffle = False)
+    history = model.fit(X_train, y_train, batch_size = 64, verbose = 1, epochs = 50, validation_data=(X_test, y_test), validation_split = 0.1, shuffle = False)
 
     # Generate generalization metrics
     scores = model.evaluate(X_test, y_test, verbose=1)
-    print(
-        f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1] * 100}%')
+    print(f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1] * 100}%')
     acc_per_fold.append(scores[1] * 100)
     loss_per_fold.append(scores[0])
+    # Calculate F1 score on validation data for the current fold
+    y_pred = model.predict(X_test)
+    y_pred_binary = (y_pred > 0.5).astype(int)
+    macro_f1 = f1_score(y_test, y_pred_binary, average='macro')
+    f1_score_per_fold.append(macro_f1 *100)
+    # Check if this fold's model has the best macro F1 score
+    if macro_f1 > best_macro_f1:
+        best_model = model
+        best_macro_f1 = macro_f1
 
     # Increase fold number
     fold_no = fold_no + 1
@@ -195,10 +190,15 @@ print('Score per fold')
 for i in range(0, len(acc_per_fold)):
     print('------------------------------------------------------------------------')
     print(f'> Fold {i + 1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
+    print('------------------------------------------------------------------------')
+print('Score per fold')
+for i in range(0, len(f1_score_per_fold)):
+    print('------------------------------------------------------------------------')
+    print(f'> Fold {i + 1} - F1_Score_macro: {f1_score_per_fold[i]}%')
 print('------------------------------------------------------------------------')
 print('Average scores for all folds:')
 print(f'> Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)})')
-print(f'> Loss: {np.mean(loss_per_fold)}')
+print(f'> F1_Score_Macro: {np.mean(f1_score_per_fold)}')
 print('------------------------------------------------------------------------')
 
 
@@ -222,9 +222,9 @@ ax2.set_ylabel('Loss Value')
 ax2.set_xlabel('Epoch')
 ax2.set_title('Loss')
 l2 = ax2.legend(loc="best")
-plt.savefig("/home/abidhasan/Documents/Indicate_fh/filtered_image/CNN_TRAIN_VS_VALIDATION_LOSS.png")
+plt.savefig("/home/abidhasan/Documents/Indicate_FH/performance_figures/my_model_kfold_CNN_TRAIN_VS_VALIDATION_LOSS.png")
 
 
-#Save the model
-model.save('/home/abidhasan/Documents/Indicate_FH/saved_model/cnn_classification.h5')
+# Save the best model
+best_model.save(modelpath+'/my_model_Kfold_best_model.h5')
 
