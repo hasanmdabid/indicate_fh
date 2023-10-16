@@ -126,9 +126,10 @@ print('Count of the test dataset labels', np.unique(y_test, return_counts=True))
 # Calling the K fold
 # Define the K-fold Cross Validator
 num_folds = 5
-fold_method = input('Do you want to use k-fold of stratified k_fold cross validation? (kf/skf)')
+fold_method = 'skf'
+#fold_method = input('Do you want to use k-fold of stratified k_fold cross validation? (kf/skf)')
 if fold_method.lower() == 'kf':
-    kfold = KFold(n_splits=num_folds, shuffle=True)
+    kfold = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 elif fold_method.lower() == 'skf':
     kfold = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=42)
 else:
@@ -146,18 +147,18 @@ average_f1_scores = []
 # Initializing the model parameters 
 method = 'No_aug_no_weights'
 input_shape = (SIZE, SIZE, 3)
-dropout_rt = 0.4
+dropout_rt = 0.2
 fold_no = 1
 nr_epochs = 100
 batch_size = 64
-batch_size = 32
 # Parameters to initialize the google_vit model
 num_layers = 12
 embed_dim = 768
 num_heads = 12
 ff_dim = 3072
 
-model_names = ['my_model', 'VGG3', 'resnet50']
+model_name = 'VGG3'
+"""
 
 for model_name in model_names:
     #Create the model
@@ -169,68 +170,78 @@ for model_name in model_names:
         model = VGG3(input_shape, dropout_rt)
     elif model_name == 'resnet50':
         model = resnet50(input_shape, dropout_rt)
+"""
 
-    for train, test in kfold.split(dataset, label):
-        # fit network
-        # Generate a print
-        print('------------------------------------------------------------------------')
-        print(f'Training for fold {fold_no} ...')
-
-        X_train = dataset[train]
-        X_test = dataset[test]
-        y_train = label[train]
-        y_test = label[test]
-
-        # Fit data to model
-        #history = model.fit(datagen.flow(X_train, y_train, batch_size= batch_size), steps_per_epoch=len(X_train) // batch_size, verbose = 1,  epochs=100, validation_data=(X_test, y_test), shuffle = False)
-        history = model.fit(X_train, y_train, batch_size = batch_size, verbose = 1, epochs = nr_epochs, validation_data=(X_test, y_test), validation_split = 0.1, shuffle = False)
-
-        # Generate generalization metrics
-        scores = model.evaluate(X_test, y_test, verbose=1)
-        print(f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1] * 100}%')
-        acc_per_fold.append(scores[1] * 100)
-        loss_per_fold.append(scores[0])
-        # Calculate F1 score on validation data for the current fold
-        y_pred = model.predict(X_test)
-        y_pred_binary = (y_pred > 0.5).astype(int)
-        macro_f1 = f1_score(y_test, y_pred_binary, average='macro')
-        f1_score_per_fold.append(macro_f1 *100)
-        # Check if this fold's model has the best macro F1 score
-        if macro_f1 > best_macro_f1:
-            best_model = model
-            best_macro_f1 = macro_f1
-
-        # Increase fold number
-        fold_no = fold_no + 1
-
-    # == Provide average scores ==
+for train, test in kfold.split(dataset, label):
+            #Create the model
+    if model_name == 'my_model':
+        model = my_model(input_shape, dropout_rt)
+    elif model_name == 'vit_model':
+        model = create_vit_model(input_shape, num_layers, embed_dim, num_heads, ff_dim, dropout_rt)
+    elif model_name == 'VGG3':
+        model = VGG3(input_shape, dropout_rt)
+    elif model_name == 'resnet50':
+        model = resnet50(input_shape, dropout_rt)
+    # fit network
+    # Generate a print
     print('------------------------------------------------------------------------')
-    print(f"Model Name= {model_name}")
-    print('Score per fold')
-    for i in range(0, len(acc_per_fold)):
-        print('------------------------------------------------------------------------')
-        print(f'> Fold {i + 1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
-        print('------------------------------------------------------------------------')
-    print('Score per fold')
-    for i in range(0, len(f1_score_per_fold)):
-        print('------------------------------------------------------------------------')
-        print(f'> Fold {i + 1} - F1_Score_macro: {f1_score_per_fold[i]}%')
+    print(f'Training for fold {fold_no} ...')
+
+    X_train = dataset[train]
+    X_test = dataset[test]
+    y_train = label[train]
+    y_test = label[test]
+
+    # Fit data to model
+    #history = model.fit(datagen.flow(X_train, y_train, batch_size= batch_size), steps_per_epoch=len(X_train) // batch_size, verbose = 1,  epochs=100, validation_data=(X_test, y_test), shuffle = False)
+    history = model.fit(dataset[train], label[train], batch_size = batch_size, verbose = 1, epochs = nr_epochs, validation_data=(dataset[test], label[test]), validation_split = 0.1, shuffle = False)
+
+    # Generate generalization metrics
+    scores = model.evaluate(dataset[test], label[test], verbose=1)
+    print(f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1] * 100}%')
+    acc_per_fold.append(scores[1] * 100)
+    loss_per_fold.append(scores[0])
+    # Calculate F1 score on validation data for the current fold
+    y_pred = (model.predict(dataset[test])).astype(int)
+    #y_pred_binary = (y_pred > 0.5).astype(int)
+    macro_f1 = f1_score(label[test], y_pred, average='macro')
+    f1_score_per_fold.append(macro_f1 *100)
+    # Check if this fold's model has the best macro F1 score
+    if macro_f1 > best_macro_f1:
+        best_model = model
+        best_macro_f1 = macro_f1
+
+    # Increase fold number
+    fold_no = fold_no + 1
+
+# == Provide average scores ==
+print('------------------------------------------------------------------------')
+print(f"Model Name= {model_name}")
+print('Score per fold')
+for i in range(0, len(acc_per_fold)):
     print('------------------------------------------------------------------------')
-    print('Average scores for all folds:')
-    print(f'> Avg_Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)})')
-    print(f'> Avg_F1_Score_Macro: {np.mean(f1_score_per_fold)}')
+    print(f'> Fold {i + 1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
     print('------------------------------------------------------------------------')
-    print('Maximume Macro F1 scores for all folds:')
-    print(f'> Max_F1_Score_Macro: {np.max(f1_score_per_fold)}')
+print('Score per fold')
+for i in range(0, len(f1_score_per_fold)):
     print('------------------------------------------------------------------------')
-    avg_accuracy = np.mean(acc_per_fold)
-    std_avg_accuracy = np.std(acc_per_fold)
-    max_f1_score_macro  = np.max(f1_score_per_fold)
-    avg_f1_score_macro = np.mean(f1_score_per_fold)
-    std_f1_score_macro = np.std(f1_score_per_fold)
-    saveResultsCSV(method, model_name, nr_epochs, batch_size, avg_accuracy, std_avg_accuracy,  avg_f1_score_macro, std_f1_score_macro, max_f1_score_macro)
-    # Save the best model
-    best_model.save(modelpath+"/"+f"{model_name}_Kfold_best_model.h5")
+    print(f'> Fold {i + 1} - F1_Score_macro: {f1_score_per_fold[i]}%')
+print('------------------------------------------------------------------------')
+print('Average scores for all folds:')
+print(f'> Avg_Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)})')
+print(f'> Avg_F1_Score_Macro: {np.mean(f1_score_per_fold)}')
+print('------------------------------------------------------------------------')
+print('Maximume Macro F1 scores for all folds:')
+print(f'> Max_F1_Score_Macro: {np.max(f1_score_per_fold)}')
+print('------------------------------------------------------------------------')
+avg_accuracy = np.mean(acc_per_fold)
+std_avg_accuracy = np.std(acc_per_fold)
+max_f1_score_macro  = np.max(f1_score_per_fold)
+avg_f1_score_macro = np.mean(f1_score_per_fold)
+std_f1_score_macro = np.std(f1_score_per_fold)
+saveResultsCSV(method, model_name, nr_epochs, batch_size, avg_accuracy, std_avg_accuracy,  avg_f1_score_macro, std_f1_score_macro, max_f1_score_macro)
+# Save the best model
+best_model.save(modelpath+"/"+f"{model_name}_SKfold_best_model.h5")
 
 """
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))

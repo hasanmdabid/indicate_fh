@@ -169,3 +169,5 @@ cython_debug/
 *.h5 
 data/
 data2/
+sample_image/
+
