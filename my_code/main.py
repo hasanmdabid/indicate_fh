@@ -91,30 +91,6 @@ elif split.lower() == 'no':
 else:
     print('You did not choose yes or no')
 
-#**********************************************************************************************
-# This code will copy all the Augmented images into the train dataset. 
-
-import shutil
-
-def copy_images(source_directory, destination_directory):
-    # Check if the source directory exists
-    if not os.path.exists(source_directory):
-        print(f"Source directory '{source_directory}' does not exist.")
-        return
-    
-    # Check if the destination directory exists, create it if not
-    if not os.path.exists(destination_directory):
-        os.makedirs(destination_directory)
-    
-    # Loop through files in the source directory
-    for filename in os.listdir(source_directory):
-        source_file = os.path.join(source_directory, filename)
-        
-        if filename.endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Add more image formats as needed
-            destination_file = os.path.join(destination_directory, filename)
-            shutil.copy(source_file, destination_file)
-            print(f"Copied '{filename}' to '{destination_directory}'")
-
 
 #**********************************************************************************************
 
@@ -123,7 +99,7 @@ def copy_images(source_directory, destination_directory):
 # create generator
 
 
-datagen = ImageDataGenerator(rescale=1./255)
+datagen = ImageDataGenerator(rescale=1.0/255)
 
 # prepare an iterators for each dataset
 
@@ -135,8 +111,11 @@ train_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/tr
 val_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/val/', class_mode='binary', target_size=target_size, batch_size=batch_size)
 # load and iterate test dataset
 test_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/test/', class_mode='binary', target_size=target_size, batch_size=batch_size)
+
+######################################################################################################################################################################
 # load and iterate test dataset for the prediction perpose when the batch_size==1, as we want to predict each image.
 predict_it = datagen.flow_from_directory('/home/abidhasan/Documents/Indicate_FH/train_val_test/test/', class_mode='binary', target_size=target_size, batch_size=1)
+######################################################################################################################################################################
 
 # confirm the iterator works
 train_X, train_y = train_it.next()
@@ -281,7 +260,7 @@ optimal_cutoff = ideal_roc_thresh['thresholds'].values
 
 
 #AUC
-#Area under the curve (AUC) for ROC plot can be used to understand hpw well a classifier 
+#Area under the curve (AUC) for ROC plot can be used to understand how well a classifier 
 #is performing. 
 #% chance that the model can distinguish between positive and negative classes.
 

@@ -1,8 +1,12 @@
+from keras import Model
+from keras.layers import MaxPool2D, Flatten, Dense
+from keras.layers import Input, Conv2D
 from keras.layers import MaxPooling2D, Conv2D, BatchNormalization, Dense, Dropout, Flatten, Input
 from keras.models import Model, Sequential
 from keras.optimizers import adam 
 from keras import layers, Input
 from keras.layers import Embedding
+from keras import Model, regularizers
 
 def my_model(input_shape, dropout_rt):
     model = Sequential()
@@ -26,46 +30,67 @@ def my_model(input_shape, dropout_rt):
     
     return model
 
-def VGG3(input_shape, dropout_rt):
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(dropout_rt))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(dropout_rt))
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(dropout_rt))
-    model.add(Flatten())
-    model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-    model.add(Dropout(dropout_rt))
-    model.add(Dense(1, activation='sigmoid'))
-    # compile model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    return model
 
+def vgg16(size, dropout_rt):
+    # input
+    input = Input(shape=(size, size, 3))
+    # 1st Conv Block
 
-def VGG2(input_shape, dropout_rt):
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
-    model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(dropout_rt))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Flatten())
-    model.add(Dropout(dropout_rt))
-    model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-    model.add(Dropout(dropout_rt))
-    model.add(Dense(1, activation='sigmoid'))
-    # compile model
-    opt = adam(lr=0.001, momentum=0.9)
-    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+    x = Conv2D(filters=64, kernel_size=3,
+               padding='same', activation='relu')(input)
+    x = Conv2D(filters=64, kernel_size=3, padding='same', activation='relu')(x)
+    x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+    # 2nd Conv Block
+
+    x = Conv2D(filters=128, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=128, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+    # 3rd Conv block
+    x = Conv2D(filters=256, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=256, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=256, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+    # 4th Conv block
+
+    x = Conv2D(filters=512, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=512, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=512, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+    # 5th Conv block
+
+    x = Conv2D(filters=512, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=512, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = Conv2D(filters=512, kernel_size=3,
+               padding='same', activation='relu')(x)
+    x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+    x = BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(x)
+
+    x = Flatten()(x)
+    x = Dense(units=256, activation='relu')(x)
+    x = Dropout(dropout_rt)(x)
+
+    x = Dense(256, kernel_regularizer=regularizers.l2(l=0.016), activity_regularizer=regularizers.l1(0.006),
+              bias_regularizer=regularizers.l1(0.006), activation='relu')(x)
+    x = Dropout(rate=.45, seed=123)(x)
+
+    output = Dense(1, activation='sigmoid')(x)
+
+    model = Model(inputs=input, outputs=output)
     return model
 
 

@@ -85,7 +85,7 @@ def image_generator(SIZE, batch_size, percentage_to_read, effected_aug_data_fold
                             save_prefix='aug', 
                             save_format='png'):
         i += 1
-        if i > 250:
+        if i > x.shape[0]//batch_size:
             break  # otherwise the generator would loop indefinitely  
         
 
