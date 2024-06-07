@@ -1,3 +1,4 @@
+#pylint: disable-all
 def image_generator(SIZE, batch_size, percentage_to_read, effected_aug_data_folder, not_effected_aug_data_folder, effected_image_directory, not_effected_image_directory):
         
     """
