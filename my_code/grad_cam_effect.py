@@ -19,7 +19,7 @@ import keras
 # Define the paths to the folders and the weights file
 effected_folder = '/home/abidhasan/Documents/Indicate_FH/data/effected'
 not_effected_folder = '/home/abidhasan/Documents/Indicate_FH/data/not_effected'
-weights_path = '/home/abidhasan/Documents/Indicate_FH/saved_model/vgg16_300.h5'
+#weights_path = '/home/abidhasan/Documents/Indicate_FH/saved_model/vgg16_300.h5'
 
 models = ['xception', 'mobilenetv2', 'vgg16', 'inceptionv3']
 
@@ -31,10 +31,24 @@ img2 = "/home/abidhasan/Documents/Indicate_FH/data/effected/001_CLE114_Baseline_
 img3 = "/home/abidhasan/Documents/Indicate_FH/data/effected/007_CLE203_Weizen_114.png"
 img4 = "/home/abidhasan/Documents/Indicate_FH/data/effected/CLE101_Baseline_Reaktion_CLE101_Baseline_Reaktion_3.png"
 img5 = "/home/abidhasan/Documents/Indicate_FH/data/effected/003_CLE170_Soja_78.png"
+img6 = "/home/abidhasan/Documents/Indicate_FH/data/effected/004_CLE191_Weizen_58.png"
+img7 = "/home/abidhasan/Documents/Indicate_FH/data/effected/004_CLE226_Soja_107.png"
+img8 = "/home/abidhasan/Documents/Indicate_FH/data/effected/003_CLE219_Milch_165.png"
+img9 = "/home/abidhasan/Documents/Indicate_FH/data/effected/003_CLE151_Trockenhefe_31.png"
+img10 = "/home/abidhasan/Documents/Indicate_FH/data/effected/003_CLE170_Soja_104.png"
+img11 = "/home/abidhasan/Documents/Indicate_FH/data/not_effected/001_CLE106_Baseline_35.png"
+img12 = "/home/abidhasan/Documents/Indicate_FH/data/not_effected/CLE131_Soja_80.png"
+img13 = "/home/abidhasan/Documents/Indicate_FH/data/not_effected/010_CLE185_Trockenhefe_72.png"
+img14 = "/home/abidhasan/Documents/Indicate_FH/data/not_effected/009_CLE185_Weizenmehl_7.png"
+img15 = "/home/abidhasan/Documents/Indicate_FH/data/not_effected/006_CLE220_Hefe_16.png"
 
 destination_dir = '/home/abidhasan/Documents/Indicate_FH/grad_cam_images/'
 
-images = [img1, img2, img3, img4, img5]
+
+#Select the set of images to be used
+
+images = [img1, img2, img3, img4, img5, img6, img7, img8, img9, img10, img11, img12, img13, img14, img15]
+
 
 
 def get_img_array(img_path, size, image_nr):
@@ -90,7 +104,7 @@ for model_name in models:
     print(model_name)
     if model_name == 'xception':
         size = 299
-        last_conv_layer_name = "block14_sepconv2_act"
+        last_conv_layer_name = "block14_sepconv2"
         
     elif model_name == 'mobilenetv2':
         size = 224

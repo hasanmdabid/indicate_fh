@@ -1,4 +1,3 @@
-
 # pylint: disable-all
 import logging
 import os
@@ -17,7 +16,7 @@ from keras import Model, layers
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, confusion_matrix, ConfusionMatrixDisplay
 
-
+print(tf.config.list_physical_devices('GPU'))
 
 models = ['xception', 'mobilenetv2', 'vgg16', 'inceptionv3']
 # Initialize the data generator
