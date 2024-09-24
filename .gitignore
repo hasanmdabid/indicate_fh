@@ -170,3 +170,5 @@ cython_debug/
 data2/
 sample_image/
 basedata/
+Effected_image_new_data/
+not_effected_all_subject/
