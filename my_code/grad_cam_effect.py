@@ -4,16 +4,11 @@ import os
 import tensorflow as tf
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel(logging.ERROR)
-from IPython.display import Image, display
-from keras.utils import img_to_array, load_img
-import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib as mpl
-import random
-from skimage.transform import resize
-from IPython.display import Image as imgdisp, display
+from IPython.display import Image 
 from keras.models import load_model
-from clear_folder import clear_folder
+
 import keras
 
 # Define the paths to the folders and the weights file
@@ -118,7 +113,8 @@ for model_name in models:
         size = 299
         last_conv_layer_name = 'mixed10'
     
-    model = load_model('/home/abidhasan/Documents/Indicate_FH/saved_model/'+model_name+'_100.h5')
+    model = load_model('/home/abidhasan/Documents/Indicate_FH/saved_model/' +
+                       model_name+'_shallow_fine_tuned100.h5')
 
 
     # Remove last layer's softmax
@@ -130,7 +126,7 @@ for model_name in models:
         # Creat teh heatmap image
         heatmap = make_gradcam_heatmap(img_array, model, last_conv_layer_name)
         
-        def save_and_display_gradcam(imagepath, heatmap, cam_path='/home/abidhasan/Documents/Indicate_FH/grad_cam_images/'+model_name+'_'+ f"{img_idx}" +'.png', alpha=0.4):
+        def save_and_display_gradcam(imagepath, heatmap, cam_path='/home/abidhasan/Documents/Indicate_FH/grad_cam_images/'+model_name+'_'+ f"{img_idx}" +'.png', alpha=0.8):
             # Load the original image
             img = keras.utils.load_img(imagepath)
             img = keras.utils.img_to_array(img)

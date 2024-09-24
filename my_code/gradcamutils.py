@@ -5,14 +5,13 @@ import tensorflow as tf
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel(logging.ERROR)
 from keras_preprocessing.image import load_img, img_to_array
-import keras
 from keras.applications.vgg16 import preprocess_input
 from tensorflow.python.framework import ops
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from keras import backend as K
-from keras.models import Model
+from keras.models import Model, load_model
 import gc
 
 tf.compat.v1.disable_eager_execution()
@@ -194,23 +193,31 @@ def read_and_preprocess_img(path, model_name):
     if model_name == 'xception':
         size = 299
         last_conv_layer_name = "block14_sepconv2"
+        model = load_model(
+            '/home/abidhasan/Documents/Indicate_FH/saved_model/xception_100.h5')
         
     elif model_name == 'mobilenetv2':
         size = 224
         last_conv_layer_name = "block_16_depthwise"
+        model = load_model(
+            '/home/abidhasan/Documents/Indicate_FH/saved_model/mobilenetv2_100.h5')
 
     elif model_name == 'vgg16':
         size = 224
         last_conv_layer_name = 'block5_conv3'
+        model = load_model(
+            '/home/abidhasan/Documents/Indicate_FH/saved_model/vgg16_100.h5')
+
 
     elif model_name == 'inceptionv3':
         size = 299
         last_conv_layer_name = 'mixed10'
+        model = load_model(
+            '/home/abidhasan/Documents/Indicate_FH/saved_model/inceptionv3_100.h5')
     img = load_img(path, target_size=(size,size))
     x = img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
-    return x, last_conv_layer_name
-
+    return model, x, last_conv_layer_name
 
 print('This script ran successfully')

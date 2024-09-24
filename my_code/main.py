@@ -125,7 +125,6 @@ print(
 print(
     f'Test set: Affected - {test_affected_count}, Not Affected - {test_not_affected_count}')
 
-
 for model_name in models:
     if model_name == 'xception':
         from keras.applications.xception import Xception
@@ -160,7 +159,7 @@ for model_name in models:
     model.compile(loss='binary_crossentropy', optimizer=tf.keras.optimizers.Adam(
         learning_rate=0.0001), metrics=['accuracy'])
 
-    callbacks = [ModelCheckpoint(checkpointpath+model_name+'mdl_wts.hdf5', monitor='val_loss', mode='min', verbose=1, save_best_only=True),
+    callbacks = [ModelCheckpoint(checkpointpath+model_name+'_mdl_wts.hdf5', monitor='val_loss', mode='min', verbose=1, save_best_only=True),
                  ReduceLROnPlateau(monitor='val_loss', factor=0.3, patience=2, verbose=1, mode='min', min_lr=0.00000001)]
 
     image_size = (size, size)
@@ -178,7 +177,7 @@ for model_name in models:
     history = model.fit(train_gen, epochs=epochs, steps_per_epoch=steps_per_epoch,
                         validation_data=test_gen, validation_steps=validation_steps, callbacks=callbacks)
 
-    model = load_model(checkpointpath+model_name+'mdl_wts.hdf5')
+    model = load_model(checkpointpath+model_name+'_mdl_wts.hdf5')
     model.save(model_dir+model_name+'_'+f"{epochs}"+'.h5')
 
     model = load_model(model_dir+model_name+'_'+f"{epochs}"+'.h5')
@@ -238,10 +237,10 @@ for model_name in models:
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.title('Receiver Operating Characteristic (ROC) Curve ')
     plt.legend(loc='lower right')
 
-    plt.savefig(figpath+'/'+model_name+'_ROC.eps',
+    plt.savefig(figpath+'/'+model_name+'_ROC_.eps',
                 format='eps', bbox_inches='tight')
 
     # Compute the confusion matrix
@@ -251,9 +250,9 @@ for model_name in models:
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[
         'Not Affected', 'Affected'])
     disp.plot(cmap=plt.cm.Blues)
-    plt.title('Confusion Matrix')
+    plt.title('Confusion Matrix ')
 
-    plt.savefig(figpath+'/'+model_name+'_CM.eps',
+    plt.savefig(figpath+'/'+model_name+'_CM_.eps',
                 format='eps', bbox_inches='tight')
 
     # Calculate the confusion matrix
@@ -306,13 +305,14 @@ for model_name in models:
     # Add some text for labels, title and axes ticks
     ax.set_xlabel('Classes')
     ax.set_ylabel('Scores')
-    ax.set_title('Precision, Recall, and F1 Scores by Class')
+    ax.set_title(
+        'Precision, Recall, and F1 Scores by Class ')
     ax.set_xticks(x)
     ax.set_xticklabels(classes)
     ax.legend()
 
     # Save plot as EPS file
-    plt.savefig(figpath+'/'+model_name+'_metrics_plot.eps',
+    plt.savefig(figpath+'/'+model_name+'_metrics_plot_.eps',
                 format='eps', bbox_inches='tight')
 
     # Save the results to a CSV file
@@ -327,7 +327,6 @@ for model_name in models:
     metrics_df = pd.DataFrame(metrics_data)
     # Save the results to the result directory
     metrics_df.to_csv(
-        result_dir+f'{model_name}_performance_metrics.csv', index=False)
+        result_dir+f'{model_name}_performance_metrics_.csv', index=False)
 
-    print(
-        f"Performance metrics for {model_name} saved to {model_name}_performance_metrics.csv")
+    print(f"Performance metrics for {model_name} saved to {model_name}_performance_metrics.csv")
